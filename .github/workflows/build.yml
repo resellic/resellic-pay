@@ -1,37 +1,36 @@
-name: Build Android APK
+name: Build APK
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Extract project
+        run: |
+          mkdir -p project
+          unzip -o resellic-pay-app.zip -d project
+
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.1'
+      - uses: android-actions/setup-android@v3
 
-      - name: Extract and Build
-        run: |
-          mkdir project
-          unzip -q "resellic-sms-apk-checked-fixed.zip" -d project
-          ROOT=$(find project -type f -name settings.gradle.kts -print -quit | xargs dirname)
-          cd "$ROOT"
-          gradle assembleDebug --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          name: resellic-debug-apk
-          path: project/**/app/build/outputs/apk/debug/app-debug.apk
+          gradle-version: '8.13'
+
+      - name: Build release APK
+        working-directory: project
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: resellic-pay-apk
+          path: project/app/build/outputs/apk/release/app-release.apk
