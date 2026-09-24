@@ -23,11 +23,18 @@ jobs:
         with:
           gradle-version: "8.9"
 
+      - name: Find project folder
+        run: |
+          F=$(find . -name settings.gradle.kts -not -path "*/node_modules/*" | head -n1)
+          if [ -z "$F" ]; then echo "settings.gradle.kts not found - upload all project files"; ls -la; exit 1; fi
+          echo "PROJ=$(dirname "$F")" >> $GITHUB_ENV
+          echo "Project folder: $(dirname "$F")"
+
       - name: Build release APK
-        run: gradle :app:assembleRelease --no-daemon
+        run: cd "$PROJ" && gradle :app:assembleRelease --no-daemon
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk BiswastoPay-SMS-v1.0.${{ github.run_number }}.apk
+        run: cp "$PROJ/app/build/outputs/apk/release/app-release.apk" BiswastoPay-SMS-v1.0.${{ github.run_number }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
