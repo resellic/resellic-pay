@@ -23,9 +23,14 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      - name: Find project folder
+- name: Find project folder
         run: |
           F=$(find . -name settings.gradle.kts -not -path "*/node_modules/*" | head -n1)
+          if [ -z "$F" ] && [ -f BiswastoPay-SMS-App.zip ]; then
+            echo "Extracting BiswastoPay-SMS-App.zip"
+            mkdir -p _src && unzip -q -o BiswastoPay-SMS-App.zip -d _src
+            F=$(find _src -name settings.gradle.kts | head -n1)
+          fi
           if [ -z "$F" ]; then echo "settings.gradle.kts not found - upload all project files"; ls -la; exit 1; fi
           echo "PROJ=$(dirname "$F")" >> $GITHUB_ENV
           echo "Project folder: $(dirname "$F")"
