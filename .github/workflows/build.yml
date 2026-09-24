@@ -2,7 +2,11 @@ name: Build APK
 
 on:
   push:
+    branches: [ main, master ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -10,28 +14,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract project
-        run: |
-          mkdir -p project
-          unzip -o resellic-pay-app.zip -d project
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Accept Android SDK licenses
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+      - uses: android-actions/setup-android@v3
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.13'
+          gradle-version: "8.9"
 
       - name: Build release APK
-        working-directory: project
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle :app:assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp app/build/outputs/apk/release/app-release.apk BiswastoPay-SMS-v1.0.${{ github.run_number }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: resellic-pay-apk
-          path: project/app/build/outputs/apk/release/app-release.apk
+          name: BiswastoPay-SMS-APK
+          path: BiswastoPay-SMS-*.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Biswasto Pay SMS v1.0.${{ github.run_number }}
+          files: BiswastoPay-SMS-*.apk
